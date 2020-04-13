@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Domain;
 
 namespace Persistence
@@ -12,6 +11,7 @@ namespace Persistence
         }
 
         public DbSet<Value> Values { get; set; }
+        public DbSet<Activity> Activities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -19,7 +19,8 @@ namespace Persistence
                 new Value { Id = 1, Name = "Value 1" },
                 new Value { Id = 2, Name = "Value 2" },
                 new Value { Id = 3, Name = "Value 3" },
-                new Value { Id = 4, Name = "Value 4" }
+                new Value { Id = 4, Name = "Value 4" },
+                new Value { Id = 5, Name = "Value 5" }
             );
         }
     }
