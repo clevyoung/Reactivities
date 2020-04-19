@@ -7,6 +7,8 @@ class ActivityStore {
   //we are going to be using decorators for our react mobx stores but we can use without decorators
   //What we could do is specify just an empty array and if we hover over this and instead of being never array it's now got
   //a type of an array
+  @observable activityRegistry = new Map();
+  // The observable map gives us a bit more functionality than  just a plain old array to store our activities
   @observable activities: IActivity[] = [];
   @observable loadingInitial = false;
   @observable selectedActivity: IActivity | undefined;
@@ -14,7 +16,7 @@ class ActivityStore {
   @observable submitting = false;
 
   @computed get activitiesByDate() {
-    return this.activities.sort(
+    return Array.from(this.activityRegistry.values()).sort(
       (a, b) => Date.parse(b.date) - Date.parse(a.date)
     );
   }
@@ -27,7 +29,7 @@ class ActivityStore {
       const activities = await agent.Activities.list();
       activities.forEach((activity) => {
         activity.date = activity.date.split('.')[0];
-        this.activities.push(activity);
+        this.activityRegistry.set(activity.id, activity);
       });
       this.loadingInitial = false;
     } catch (error) {
@@ -40,7 +42,7 @@ class ActivityStore {
     this.submitting = true;
     try {
       await agent.Activities.create(activity);
-      this.activities.push(activity);
+      this.activityRegistry.set(activity.id, activity);
       this.editMode = false;
       this.submitting = false;
     } catch (error) {
@@ -55,9 +57,8 @@ class ActivityStore {
   };
 
   @action selectActivity = (id: string) => {
-    this.selectedActivity = this.activities.find((a) => a.id === id);
+    this.selectedActivity = this.activityRegistry.get(id);
     this.editMode = false;
-    //the find method returns undefined if it doesn't find the activity that matches  this particular item.
   };
 }
 
