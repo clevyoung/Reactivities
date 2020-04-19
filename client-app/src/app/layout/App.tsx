@@ -8,6 +8,7 @@ import LoadingComponent from './LoadingComponent';
 import ActivityDashboard from '../../features/activities/dashboard/ActivityDashboard';
 
 import ActivityStore from '../stores/activityStore';
+import { observer } from 'mobx-react-lite';
 
 const App = () => {
   const activityStore = useContext(ActivityStore);
@@ -17,33 +18,12 @@ const App = () => {
     null
   ); //union type : Selected activity can be a type of activity or it can be null
   const [editMode, setEditMode] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [target, setTarget] = useState('');
 
   const handleSelectActivity = (id: string) => {
     setSelectedActivity(activities.filter((a) => a.id === id)[0]);
     setEditMode(false);
-  };
-
-  const handleOpenCreateForm = () => {
-    setSelectedActivity(null);
-    setEditMode(true);
-  };
-
-  const handleCreateActivity = (activity: IActivity) => {
-    setSubmitting(true);
-    /*
-    What we are going to do is stick to creating the resource on the server waiting fully acknowledgement that
-    this has happened and then we're going to process these changes on our client side
-    */
-    agent.Activities.create(activity)
-      .then(() => {
-        setActivities([...activities, activity]);
-        setSelectedActivity(activity);
-        setEditMode(false);
-      })
-      .then(() => setSubmitting(false));
   };
 
   const handleEditActivity = (activity: IActivity) => {
@@ -73,34 +53,22 @@ const App = () => {
       .then(() => setSubmitting(false));
   };
   useEffect(() => {
-    agent.Activities.list()
-      .then((response) => {
-        let activities: IActivity[] = [];
-        response.forEach((activity) => {
-          activity.date = activity.date.split('.')[0];
-          activities.push(activity);
-        });
-        setActivities(activities);
-      })
-      .then(() => setLoading(false));
-    //if I remove the array here then what's going to happens is I'am going to send my component into loop,
-    //because if I don't have this here then there's noting to stop this from running every single time my component renders.
-  }, []);
+    activityStore.loadActivities();
+    //Because we're using a function inside our useEffect then we have to tell our useEffect about dependencies that it needs to
+    //run this particular function. We have to specify in this dependency array
+  }, [activityStore]);
 
-  if (loading) return <LoadingComponent content='Loading activities' />;
+  if (activityStore.loadingInitial)
+    return <LoadingComponent content='Loading activities' />;
 
   return (
     <>
-      <NavBar openCreateForm={handleOpenCreateForm} />
+      <NavBar />
       <Container style={{ marginTop: '7em' }}>
         <ActivityDashboard
-          activities={activities}
           selectActivity={handleSelectActivity}
-          selectedActivity={selectedActivity!} //This is basically going to define it as either an activity or null 또 한가지 방법은 인터페이스 프롭 정의할 때 IActivity | null 이렇게 설정해주는 것
-          editMode={editMode}
           setEditMode={setEditMode}
           setSelectedActivity={setSelectedActivity}
-          createActivity={handleCreateActivity}
           editActivity={handleEditActivity}
           deleteActivity={handleDeleteActivity}
           submitting={submitting}
@@ -111,4 +79,7 @@ const App = () => {
   );
 };
 
-export default App;
+//We didn't see anything of it inside our component unless we make our component an observer.
+//The observer is a higher order component and a higher order component takes another component as its parameter and it returns a new component with extra powers
+//Any child component that's receiving observables we also want to make an observer as well
+export default observer(App);
