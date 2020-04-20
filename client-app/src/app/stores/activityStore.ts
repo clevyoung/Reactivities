@@ -1,7 +1,9 @@
-import { observable, action, computed } from 'mobx';
+import { observable, action, computed, configure, runInAction } from 'mobx';
 import { createContext, SyntheticEvent } from 'react';
 import { IActivity } from '../models/activity';
 import agent from '../api/agent';
+
+configure({ enforceActions: 'always' });
 
 class ActivityStore {
   //we are going to be using decorators for our react mobx stores but we can use without decorators
@@ -28,14 +30,18 @@ class ActivityStore {
     this.loadingInitial = true; // we wouldn't be allowed to do this in redux beause we're mutating our state here this is perfectly valid code in mobx it's designed to be mutated
     try {
       const activities = await agent.Activities.list();
-      activities.forEach((activity) => {
-        activity.date = activity.date.split('.')[0];
-        this.activityRegistry.set(activity.id, activity);
+      runInAction('loading activities', () => {
+        activities.forEach((activity) => {
+          activity.date = activity.date.split('.')[0];
+          this.activityRegistry.set(activity.id, activity);
+        });
+        this.loadingInitial = false;
       });
-      this.loadingInitial = false;
     } catch (error) {
+      runInAction('load activities error', () => {
+        this.loadingInitial = false;
+      });
       console.log(error);
-      this.loadingInitial = false;
     }
   };
 
@@ -43,11 +49,15 @@ class ActivityStore {
     this.submitting = true;
     try {
       await agent.Activities.create(activity);
-      this.activityRegistry.set(activity.id, activity);
-      this.editMode = false;
-      this.submitting = false;
+      runInAction('creating activities', () => {
+        this.activityRegistry.set(activity.id, activity);
+        this.editMode = false;
+        this.submitting = false;
+      });
     } catch (error) {
-      this.submitting = false;
+      runInAction('create activity error', () => {
+        this.submitting = false;
+      });
       console.log(error);
     }
   };
@@ -56,12 +66,16 @@ class ActivityStore {
     this.submitting = true;
     try {
       await agent.Activities.update(activity);
-      this.activityRegistry.set(activity.id, activity);
-      this.selectedActivity = activity;
-      this.editMode = false;
-      this.submitting = false;
+      runInAction('editing activity', () => {
+        this.activityRegistry.set(activity.id, activity);
+        this.selectedActivity = activity;
+        this.editMode = false;
+        this.submitting = false;
+      });
     } catch (error) {
-      this.submitting = false;
+      runInAction('edit activity error', () => {
+        this.submitting = false;
+      });
       console.log(error);
     }
   };
@@ -73,13 +87,17 @@ class ActivityStore {
     this.submitting = true;
     this.target = event.currentTarget.name;
     try {
-      agent.Activities.delete(id);
-      this.activityRegistry.delete(id);
-      this.submitting = false;
-      this.target = '';
+      await agent.Activities.delete(id);
+      runInAction('deleting activity', () => {
+        this.activityRegistry.delete(id);
+        this.submitting = false;
+        this.target = '';
+      });
     } catch (error) {
-      this.submitting = false;
-      this.target = '';
+      runInAction('delete activity error', () => {
+        this.submitting = false;
+        this.target = '';
+      });
       console.log(error);
     }
   };
