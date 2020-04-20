@@ -1,40 +1,59 @@
-import React, { useState, FormEvent, useContext } from 'react';
+import React, { useState, FormEvent, useContext, useEffect } from 'react';
 import { Segment, Form, Button } from 'semantic-ui-react';
 import { IActivity } from '../../../app/models/activity';
 import { v4 as uuid } from 'uuid';
 import ActivityStore from '../../../app/stores/activityStore';
 import { observer } from 'mobx-react-lite';
+import { RouteComponentProps } from 'react-router-dom';
 
-interface IProps {
-  activity: IActivity;
+interface DetailParams {
+  id: string;
 }
 
-const ActivityForm: React.FC<IProps> = ({ activity: initialformState }) => {
+const ActivityForm: React.FC<RouteComponentProps<DetailParams>> = ({
+  match,
+  history,
+}) => {
   const activityStore = useContext(ActivityStore);
   const {
     createActivity,
     editActivity,
     submitting,
-    calcelFormOpen,
+    activity: initialformState,
+    loadActivity,
+    clearActivity,
   } = activityStore;
-  const initializeForm = () => {
-    if (initialformState) {
-      return initialformState;
-    } else {
-      return {
-        id: '',
-        title: '',
-        category: '',
-        description: '',
-        date: '',
-        city: '',
-        venue: '',
-      };
+
+  const [activity, setActivity] = useState<IActivity>({
+    id: '',
+    title: '',
+    category: '',
+    description: '',
+    date: '',
+    city: '',
+    venue: '',
+  });
+
+  useEffect(() => {
+    // This runs every single time our component renders and we only attempt to load
+    // an activity when we're editing an activity we don't want to run this particular funtion
+    //when we're creating an activity
+    if (match.params.id && activity.id.length === 0) {
+      loadActivity(match.params.id).then(() => {
+        initialformState && setActivity(initialformState);
+      });
     }
-  };
 
-  const [activity, setActivity] = useState<IActivity>(initializeForm);
-
+    return () => {
+      clearActivity();
+    };
+  }, [
+    loadActivity,
+    clearActivity,
+    match.params.id,
+    initialformState,
+    activity.id.length,
+  ]);
   const handleSubmit = (event: any) => {
     event.preventDefault();
     if (activity.id.length === 0) {
@@ -43,9 +62,13 @@ const ActivityForm: React.FC<IProps> = ({ activity: initialformState }) => {
         id: uuid(),
       };
 
-      createActivity(newActivity);
+      createActivity(newActivity).then(() =>
+        history.push(`/activities/${newActivity.id}`)
+      );
     } else {
-      editActivity(activity);
+      editActivity(activity).then(() =>
+        history.push(`/activities/${activity.id}`)
+      );
     }
   };
 
@@ -105,7 +128,7 @@ const ActivityForm: React.FC<IProps> = ({ activity: initialformState }) => {
           content='submit'
         />
         <Button
-          onClick={calcelFormOpen}
+          onClick={() => history.push('/activities')}
           floated='right'
           type='button'
           content='Cancel'

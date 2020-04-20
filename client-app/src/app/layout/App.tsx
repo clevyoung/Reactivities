@@ -1,30 +1,37 @@
-import React, { useEffect, useContext } from 'react';
+import React from 'react';
 import { Container } from 'semantic-ui-react';
 import NavBar from '../../features/nav/NavBar';
-import LoadingComponent from './LoadingComponent';
-import ActivityDashboard from '../../features/activities/dashboard/ActivityDashboard';
 
-import ActivityStore from '../stores/activityStore';
 import { observer } from 'mobx-react-lite';
+import { Route, withRouter, RouteComponentProps } from 'react-router-dom';
 
-const App = () => {
-  const activityStore = useContext(ActivityStore);
-  const { loadActivities, loadingInitial } = activityStore;
+import HomePage from '../../features/home/HomePage';
+import ActivityDashboard from '../../features/activities/dashboard/ActivityDashboard';
+import ActivityForm from '../../features/activities/form/ActivityForm';
+import ActivityDetails from '../../features/activities/details/ActivityDetails';
 
-  useEffect(() => {
-    loadActivities();
-    //Because we're using a function inside our useEffect then we have to tell our useEffect about dependencies that it needs to
-    //run this particular function. We have to specify in this dependency array
-  }, [activityStore]);
-
-  if (loadingInitial) return <LoadingComponent content='Loading activities' />;
-
+const App: React.FC<RouteComponentProps> = ({ location }) => {
   return (
     <>
-      <NavBar />
-      <Container style={{ marginTop: '7em' }}>
-        <ActivityDashboard />
-      </Container>
+      <Route exact path='/' component={HomePage} />
+      <Route
+        path={'/(.+)'}
+        render={() => (
+          <>
+            <NavBar />
+            <Container style={{ marginTop: '7em' }}>
+              <Route exact path='/activities' component={ActivityDashboard} />
+              <Route path='/activities/:id' component={ActivityDetails} />
+              <Route
+                exact
+                key={location.key}
+                path={['/createActivity', '/manage/:id']}
+                component={ActivityForm}
+              />
+            </Container>
+          </>
+        )}
+      />
     </>
   );
 };
@@ -32,4 +39,4 @@ const App = () => {
 //We didn't see anything of it inside our component unless we make our component an observer.
 //The observer is a higher order component and a higher order component takes another component as its parameter and it returns a new component with extra powers
 //Any child component that's receiving observables we also want to make an observer as well
-export default observer(App);
+export default withRouter(observer(App));
