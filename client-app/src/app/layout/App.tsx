@@ -1,8 +1,5 @@
-import React, { useState, useEffect, SyntheticEvent, useContext } from 'react';
+import React, { useEffect, useContext } from 'react';
 import { Container } from 'semantic-ui-react';
-import agent from '../api/agent';
-
-import { IActivity } from '../models/activity';
 import NavBar from '../../features/nav/NavBar';
 import LoadingComponent from './LoadingComponent';
 import ActivityDashboard from '../../features/activities/dashboard/ActivityDashboard';
@@ -12,50 +9,21 @@ import { observer } from 'mobx-react-lite';
 
 const App = () => {
   const activityStore = useContext(ActivityStore);
+  const { loadActivities, loadingInitial } = activityStore;
 
-  const [activities, setActivities] = useState<IActivity[]>([]);
-  const [selectedActivity, setSelectedActivity] = useState<IActivity | null>(
-    null
-  ); //union type : Selected activity can be a type of activity or it can be null
-  const [editMode, setEditMode] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [target, setTarget] = useState('');
-
-  const handleSelectActivity = (id: string) => {
-    setSelectedActivity(activities.filter((a) => a.id === id)[0]);
-    setEditMode(false);
-  };
-
-  const handleDeleteActivity = (
-    event: SyntheticEvent<HTMLButtonElement>,
-    id: string
-  ) => {
-    setSubmitting(true);
-    setTarget(event.currentTarget.name);
-    agent.Activities.delete(id)
-      .then(() => {
-        setActivities([...activities.filter((a) => a.id !== id)]);
-      })
-      .then(() => setSubmitting(false));
-  };
   useEffect(() => {
-    activityStore.loadActivities();
+    loadActivities();
     //Because we're using a function inside our useEffect then we have to tell our useEffect about dependencies that it needs to
     //run this particular function. We have to specify in this dependency array
   }, [activityStore]);
 
-  if (activityStore.loadingInitial)
-    return <LoadingComponent content='Loading activities' />;
+  if (loadingInitial) return <LoadingComponent content='Loading activities' />;
 
   return (
     <>
       <NavBar />
       <Container style={{ marginTop: '7em' }}>
-        <ActivityDashboard
-          deleteActivity={handleDeleteActivity}
-          submitting={submitting}
-          target={target}
-        />
+        <ActivityDashboard />
       </Container>
     </>
   );
