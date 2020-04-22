@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
-import { Item, Segment } from 'semantic-ui-react';
+import { Item } from 'semantic-ui-react';
 import ActivityStore from '../../../app/stores/activityStore';
+import { Label } from 'semantic-ui-react';
 
 import { observer } from 'mobx-react-lite';
 import ActivityListItem from './ActivityListItem';
@@ -8,14 +9,22 @@ import ActivityListItem from './ActivityListItem';
 const ActivityList: React.FC = () => {
   const activityStore = useContext(ActivityStore);
   const { activitiesByDate } = activityStore;
+  console.log(activitiesByDate);
   return (
-    <Segment clearing>
-      <Item.Group divided>
-        {activitiesByDate.map((activity) => (
-          <ActivityListItem activity={activity} key={activity.id} />
-        ))}
-      </Item.Group>
-    </Segment>
+    <>
+      {activitiesByDate.map(([group, activities]) => (
+        <>
+          <Label key={group} size='large' color='blue'>
+            {group}
+          </Label>
+          <Item.Group divided>
+            {activities.map((activity) => (
+              <ActivityListItem activity={activity} key={activity.id} />
+            ))}
+          </Item.Group>
+        </>
+      ))}
+    </>
   );
 };
 

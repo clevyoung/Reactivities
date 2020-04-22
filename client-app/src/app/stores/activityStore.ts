@@ -17,13 +17,29 @@ class ActivityStore {
   @observable target = '';
 
   @computed get activitiesByDate() {
-    return Array.from(this.activityRegistry.values()).sort(
-      (a, b) => Date.parse(b.date) - Date.parse(a.date)
+    return this.groupActivitiesByDate(
+      Array.from(this.activityRegistry.values())
     );
   }
   //We use computed properties when we already have the data inside our store but we can work out what the results of this
   //should be based on already existing data and soring the activities by dates is a kind of ideal candidate for a computed property
 
+  //Helper method
+  groupActivitiesByDate(activities: IActivity[]) {
+    const sortedActivities = activities.sort(
+      (a, b) => Date.parse(b.date) - Date.parse(a.date)
+    );
+
+    return Object.entries(
+      sortedActivities.reduce((activities, activity) => {
+        const date = activity.date.split('T')[0];
+        activities[date] = activities[date]
+          ? [...activities[date], activity]
+          : [activity];
+        return activities;
+      }, {} as { [key: string]: IActivity[] })
+    );
+  }
   @action loadActivities = async () => {
     this.loadingInitial = true; // we wouldn't be allowed to do this in redux beause we're mutating our state here this is perfectly valid code in mobx it's designed to be mutated
     try {
@@ -53,6 +69,7 @@ class ActivityStore {
         activity = await agent.Activities.details(id);
         runInAction('getting activity', () => {
           this.activity = activity;
+          this.loadingInitial = false;
         });
       } catch (error) {
         runInAction('get activity error', () => {
@@ -63,12 +80,12 @@ class ActivityStore {
     }
   };
 
-  @action clearActivity = () => {
-    this.activity = null;
-  };
-
   getActivity = (id: string) => {
     return this.activityRegistry.get(id);
+  };
+
+  @action clearActivity = () => {
+    this.activity = null;
   };
 
   @action createActivity = async (activity: IActivity) => {
