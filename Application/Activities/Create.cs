@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Domain;
 using MediatR;
 using Persistence;
+using FluentValidation;
+
 
 namespace Application.Activities
 {
@@ -12,6 +14,7 @@ namespace Application.Activities
         public class Command : IRequest
         {
             public Guid Id { get; set; }
+
             public string Title { get; set; }
             public string Description { get; set; }
             public String Category { get; set; }
@@ -20,6 +23,20 @@ namespace Application.Activities
 
             public string Venue { get; set; }
         }
+
+        public class CommandValidator : AbstractValidator<Command>
+        {
+            public CommandValidator()
+            {
+                RuleFor(x => x.Title).NotEmpty();
+                RuleFor(x => x.Description).NotEmpty();
+                RuleFor(x => x.Category).NotEmpty();
+                RuleFor(x => x.City).NotEmpty();
+                RuleFor(x => x.Venue).NotEmpty();
+                RuleFor(x => x.Date).NotEmpty();
+            }
+        }
+        //It's quite a common technique when using the mediator pattern to add the fluent validator in between the command and the handler
 
         public class Handler : IRequestHandler<Command>
         {
