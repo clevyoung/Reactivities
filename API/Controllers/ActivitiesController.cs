@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers
 {
     [Route("api/[controller]")]
-    //[ApiController]
+    [ApiController]
     public class ActivitiesController : ControllerBase //It's not going to be responsible for generating views that are going to be visible on our client
     {
         private readonly IMediator _mediator;
